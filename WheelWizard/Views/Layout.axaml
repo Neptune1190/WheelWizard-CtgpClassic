@@ -10,7 +10,7 @@
         xmlns:patterns="clr-namespace:WheelWizard.Views.Patterns"
         xmlns:miiVars="using:WheelWizard.MiiImages.Domain"
         Height="876" Width="656" WindowStartupLocation="CenterScreen"
-        WindowDecorations="None"
+        SystemDecorations="None"
         ExtendClientAreaToDecorationsHint="True"
         CanResize='False' Background="Transparent">
     <Grid ColumnDefinitions="192,*" RowDefinitions="27,17,18,96,*,80" x:Name="CompleteGrid"
@@ -138,6 +138,24 @@
                                            PageType="{x:Type pages:KitchenSinkPage}"
                                            Text="Kitchen Sink" x:Name="KitchenSinkButton" />
         </StackPanel>
+
+        <Border Grid.Column="0" Grid.Row="4"
+                VerticalAlignment="Bottom"
+                Margin="10,0,10,12"
+                Padding="10,8"
+                Background="{StaticResource Neutral800}"
+                BorderBrush="{StaticResource Neutral600}"
+                BorderThickness="1"
+                CornerRadius="{StaticResource GlobalCornerRadius}">
+            <StackPanel Spacing="4">
+                <TextBlock Text="WiiCompiled product"
+                           Classes="TinyText"
+                           Foreground="{StaticResource Neutral300}" />
+                <ComboBox x:Name="RecompProductProfileDropdown"
+                          MinWidth="150"
+                          HorizontalAlignment="Stretch" />
+            </StackPanel>
+        </Border>
 
         <components:IconLabelButton Grid.Column="0" Grid.Row="5"
                                     x:Name="SupportUsButton"

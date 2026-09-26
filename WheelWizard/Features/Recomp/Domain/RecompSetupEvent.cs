@@ -28,9 +28,20 @@ public sealed record RecompProductsEvent(
     bool RebuildRequired,
     RecompProductStatus Base,
     RecompProductStatus RetroRewind,
+    RecompProductStatus CtgpClassic,
     bool ProtocolValid = true
 ) : RecompSetupEvent
 {
+    public RecompProductsEvent(
+        string? SetupVersion,
+        string? InstallDir,
+        bool RebuildRequired,
+        RecompProductStatus Base,
+        RecompProductStatus RetroRewind,
+        bool ProtocolValid = true
+    )
+        : this(SetupVersion, InstallDir, RebuildRequired, Base, RetroRewind, RecompProductStatus.Unknown, ProtocolValid) { }
+
     /// <summary>
     /// Whether the report calls for any repair action. Product-level state is included so a malformed
     /// or newer report can never be mistaken for a clean installation merely because
@@ -38,8 +49,24 @@ public sealed record RecompProductsEvent(
     /// </summary>
     public bool ActionRequired => !ProtocolValid || RebuildRequired || Base.ActionRequired || RetroRewind.ActionRequired;
 
+    public bool ActionRequiredFor(RecompProductProfile profile) =>
+        profile switch
+        {
+            RecompProductProfile.Base => !ProtocolValid || RebuildRequired || Base.ActionRequired,
+            RecompProductProfile.CtgpClassic => !ProtocolValid || RebuildRequired || CtgpClassic.ActionRequired,
+            _ => !ProtocolValid || RebuildRequired || Base.ActionRequired || RetroRewind.ActionRequired,
+        };
+
+    public bool IsCurrentFor(RecompProductProfile profile) =>
+        profile switch
+        {
+            RecompProductProfile.Base => Base.IsCurrent,
+            RecompProductProfile.CtgpClassic => CtgpClassic.IsCurrent,
+            _ => Base.IsCurrent && RetroRewind.IsCurrent,
+        };
+
     /// <summary>Whether either product is in a state that must not be launched.</summary>
-    public bool IsBlocked => !ProtocolValid || Base.IsBlocked || RetroRewind.IsBlocked;
+    public bool IsBlocked => !ProtocolValid || Base.IsBlocked || RetroRewind.IsBlocked || CtgpClassic.IsBlocked;
 }
 
 /// <summary>The product statuses of the v1 contract. Anything else is <see cref="Unknown"/>.</summary>

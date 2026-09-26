@@ -98,6 +98,7 @@ public partial class Layout : BaseWindow, IPollingListener
         OnSettingChanged(SettingsService.SAVED_WINDOW_SCALE);
         _settingsSignalSubscription = SettingsSignalBus.Subscribe(OnSettingSignal);
         UpdateTestingButtonVisibility();
+        ConfigureRecompProductSelector();
 
         UpdateMadeByText();
         LocalizationProvider.LanguageChanged += OnLanguageChanged;
@@ -108,7 +109,6 @@ public partial class Layout : BaseWindow, IPollingListener
             TitleLabel.Margin -= new Thickness(0, 0, 0, 18);
 
             ExtendClientAreaTitleBarHeightHint = 0;
-            WindowDecorations = WindowDecorations.Full;
         }
 
         LiveStatus.Subscribe(this);
@@ -118,6 +118,34 @@ public partial class Layout : BaseWindow, IPollingListener
         _ = ReloadModsAndShowErrorsAsync();
         KitchenSinkButton.IsVisible = DevelopmentMode.IsEnabled;
         UpdateOtherSectionVisibility();
+    }
+
+    private void ConfigureRecompProductSelector()
+    {
+        RecompProductProfileDropdown.ItemsSource = new[] { "Base", "Retro Rewind", "CTGP Classic" };
+        RecompProductProfileDropdown.SelectedIndex = SettingsService
+            .Get<string>(SettingsService.RECOMP_PRODUCT_PROFILE)
+            .ToLowerInvariant() switch
+        {
+            "base" => 0,
+            "ctgpclassic" or "ctgp-classic" => 2,
+            _ => 1,
+        };
+        RecompProductProfileDropdown.SelectionChanged += RecompProductProfile_OnChanged;
+    }
+
+    private void RecompProductProfile_OnChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (RecompProductProfileDropdown.SelectedIndex < 0)
+            return;
+
+        var profile = RecompProductProfileDropdown.SelectedIndex switch
+        {
+            0 => "base",
+            2 => "ctgpclassic",
+            _ => "retro-rewind",
+        };
+        SettingsService.Set(SettingsService.RECOMP_PRODUCT_PROFILE, profile);
     }
 
     protected override void OnLoaded(RoutedEventArgs e)

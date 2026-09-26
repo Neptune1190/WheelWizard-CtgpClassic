@@ -34,7 +34,7 @@
         </StackPanel>
 
         <TextBox Grid.Row="0" Width="200"
-                 PlaceholderText="{loc:T placeholder.search_for_players}"
+                 Watermark="{loc:T placeholder.search_for_players}"
                  VerticalAlignment="Bottom"
                  TextChanged="PlayerSearchField_OnTextChanged"
                  HorizontalAlignment="Right"

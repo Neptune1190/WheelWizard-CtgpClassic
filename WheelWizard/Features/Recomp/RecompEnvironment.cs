@@ -1,5 +1,6 @@
 using System.IO.Abstractions;
 using WheelWizard.CustomDistributions;
+using WheelWizard.Recomp.Domain;
 using WheelWizard.Settings;
 
 namespace WheelWizard.Recomp;
@@ -49,6 +50,8 @@ public interface IRecompEnvironment
     /// <see langword="null"/> when WheelWizard has not installed Retro Rewind yet.
     /// </summary>
     string? RetroRewindFolderPath { get; }
+    string? CtgpClassicFolderPath { get; }
+    RecompProductProfile ProductProfile { get; }
 
     /// <summary>The Wheel Wizard-owned copy of the Dolphin NAND, whether or not it exists yet.</summary>
     string NandCopyFolderPath { get; }
@@ -81,6 +84,16 @@ public sealed class RecompEnvironment(
     public string InstalledSetupFilePath => paths.SetupFilePath;
 
     public string? RetroRewindFolderPath => ExistingFolderOrNull(distributionPaths.RetroRewindFolderPath);
+
+    public string? CtgpClassicFolderPath => ExistingFolderOrNull(distributionPaths.CtgpClassicFolderPath);
+
+    public RecompProductProfile ProductProfile =>
+        settings.Get<string>(settings.RECOMP_PRODUCT_PROFILE).ToLowerInvariant() switch
+        {
+            "base" => RecompProductProfile.Base,
+            "ctgpclassic" or "ctgp-classic" => RecompProductProfile.CtgpClassic,
+            _ => RecompProductProfile.RetroRewind,
+        };
 
     public string NandCopyFolderPath => paths.NandCopyFolderPath;
 
@@ -126,6 +139,17 @@ public sealed class RecompLinuxEnvironment(
 
     public string? RetroRewindFolderPath =>
         fileSystem.Directory.Exists(distributionPaths.RetroRewindFolderPath) ? distributionPaths.RetroRewindFolderPath : null;
+
+    public string? CtgpClassicFolderPath =>
+        fileSystem.Directory.Exists(distributionPaths.CtgpClassicFolderPath) ? distributionPaths.CtgpClassicFolderPath : null;
+
+    public RecompProductProfile ProductProfile =>
+        settings.Get<string>(settings.RECOMP_PRODUCT_PROFILE).ToLowerInvariant() switch
+        {
+            "base" => RecompProductProfile.Base,
+            "ctgpclassic" or "ctgp-classic" => RecompProductProfile.CtgpClassic,
+            _ => RecompProductProfile.RetroRewind,
+        };
 
     public string NandCopyFolderPath => paths.NandCopyFolderPath;
 }

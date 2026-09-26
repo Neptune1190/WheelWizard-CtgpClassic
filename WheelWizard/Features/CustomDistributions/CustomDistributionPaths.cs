@@ -8,6 +8,7 @@ public interface ICustomDistributionPaths
 {
     string RootFolderPath { get; }
     string RetroRewindFolderPath { get; }
+    string CtgpClassicFolderPath { get; }
     string BetaFolderPath { get; }
     string PatchesFolderPath { get; }
     string BetaPatchesFolderPath { get; }
@@ -33,6 +34,7 @@ public sealed class CustomDistributionPaths(IApplicationDataLocation application
             ? fileSystem.Path.Combine(dolphin.LoadFolderPath, "Riivolution", "WheelWizard")
             : fileSystem.Path.Combine(applicationData.DirectoryPath, "RetroRewind");
     public string RetroRewindFolderPath => fileSystem.Path.Combine(RootFolderPath, "RetroRewind6");
+    public string CtgpClassicFolderPath => fileSystem.Path.Combine(applicationData.DirectoryPath, "CTGPClassic");
     public string BetaFolderPath => fileSystem.Path.Combine(RootFolderPath, "RRBeta");
     public string PatchesFolderPath => fileSystem.Path.Combine(RetroRewindFolderPath, "Patches");
     public string BetaPatchesFolderPath => fileSystem.Path.Combine(BetaFolderPath, "Patches");

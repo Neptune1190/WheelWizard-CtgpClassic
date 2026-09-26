@@ -192,7 +192,8 @@ public sealed class RecompInstallService : IRecompInstallService
             hasInstalledHost ? installedVersion : null,
             latestRelease?.TagName,
             products?.IsSuccess == true ? products.Value : null,
-            installationBusy
+            installationBusy,
+            environment.ProductProfile
         );
 
         // A build that skipped the payload is healthy as far as the host is concerned, but it cannot
@@ -223,6 +224,9 @@ public sealed class RecompInstallService : IRecompInstallService
         CancellationToken cancellationToken
     )
     {
+        if (environment.ProductProfile != RecompProductProfile.RetroRewind)
+            return Ok(RecompRetroWfcPayloadMode.Skip);
+
         var hasRetroRewindSource = !string.IsNullOrWhiteSpace(environment.RetroRewindFolderPath);
         var serviceReachable =
             !RecompRetroWfcPayloadPolicy.NeedsServiceProbe(state, hasRetroRewindSource)
@@ -319,7 +323,13 @@ public sealed class RecompInstallService : IRecompInstallService
             environment.InstalledSetupFilePath,
             // Every retro operation passes the Retro Rewind source, so the check answers about the
             // installation that the launch will actually read from.
-            RecompSetupCommandBuilder.BuildCheckProductsArguments(environment.InstallFolderPath, environment.RetroRewindFolderPath),
+            RecompSetupCommandBuilder.BuildCheckProductsArgumentList(
+                environment.InstallFolderPath,
+                environment.ProductProfile,
+                environment.ProductProfile == RecompProductProfile.CtgpClassic
+                    ? environment.CtgpClassicFolderPath
+                    : environment.RetroRewindFolderPath
+            ),
             environment.InstallFolderPath,
             line =>
             {
@@ -509,7 +519,7 @@ public sealed class RecompInstallService : IRecompInstallService
 
         var launchResult = await processRunner.RunAsync(
             environment.InstalledSetupFilePath,
-            RecompSetupCommandBuilder.BuildLaunchArguments(retroRewind: true),
+            RecompSetupCommandBuilder.BuildLaunchArguments(environment.ProductProfile),
             environment.InstallFolderPath,
             onStandardOutputLine: null,
             cancellationToken
@@ -595,6 +605,8 @@ public sealed class RecompInstallService : IRecompInstallService
             GameFilePath = environment.GameFilePath,
             InstallFolderPath = environment.InstallFolderPath,
             RetroRewindFolderPath = environment.RetroRewindFolderPath,
+            CtgpClassicFolderPath = environment.CtgpClassicFolderPath,
+            ProductProfile = environment.ProductProfile,
             Portable = environment.IsPortableInstall,
             RetroWfcPayloadMode = payloadMode,
         };
@@ -688,13 +700,21 @@ public sealed class RecompInstallService : IRecompInstallService
     {
         // The launcher brings Retro Rewind current before any setup operation, so the source the
         // backend snapshots its compile inputs from is the state the launch will actually use.
-        var retroRewindFolderPath = environment.RetroRewindFolderPath;
-        if (string.IsNullOrWhiteSpace(retroRewindFolderPath))
-            return Fail("Retro Rewind must be installed before WiiCompiled can repair or launch.");
+        var sourceFolderPath =
+            environment.ProductProfile == RecompProductProfile.CtgpClassic
+                ? environment.CtgpClassicFolderPath
+                : environment.RetroRewindFolderPath;
+        if (string.IsNullOrWhiteSpace(sourceFolderPath))
+            return Fail(
+                environment.ProductProfile == RecompProductProfile.CtgpClassic
+                    ? "CTGP Classic must be installed before WiiCompiled can repair or launch."
+                    : "Retro Rewind must be installed before WiiCompiled can repair or launch."
+            );
 
         var arguments = RecompSetupCommandBuilder.BuildRepairProductsArguments(
             environment.InstallFolderPath,
-            retroRewindFolderPath,
+            environment.ProductProfile,
+            sourceFolderPath,
             payloadMode
         );
 
@@ -727,12 +747,22 @@ public sealed class RecompInstallService : IRecompInstallService
     /// something the repair must actually install, not a state to report as healthy forever.
     /// </summary>
     private bool NeedsRepair(RecompProductsEvent products) =>
-        products.ActionRequired
-        || (products.RetroRewind.State == RecompProductState.Absent && !string.IsNullOrWhiteSpace(environment.RetroRewindFolderPath));
+        products.ActionRequiredFor(environment.ProductProfile)
+        || environment.ProductProfile switch
+        {
+            RecompProductProfile.CtgpClassic => products.CtgpClassic.State == RecompProductState.Absent
+                && !string.IsNullOrWhiteSpace(environment.CtgpClassicFolderPath),
+            RecompProductProfile.RetroRewind => products.RetroRewind.State == RecompProductState.Absent
+                && !string.IsNullOrWhiteSpace(environment.RetroRewindFolderPath),
+            _ => false,
+        };
 
     private static string BuildUnrepairedProductsMessage(RecompProductsEvent products)
     {
-        var detail = products.RetroRewind.ActionRequired ? products.RetroRewind.Detail : products.Base.Detail;
+        var detail =
+            products.CtgpClassic.ActionRequired ? products.CtgpClassic.Detail
+            : products.RetroRewind.ActionRequired ? products.RetroRewind.Detail
+            : products.Base.Detail;
         return string.IsNullOrWhiteSpace(detail)
             ? "The WiiCompiled repair finished, but the installed products are still not current."
             : $"The WiiCompiled repair finished, but the installed products are still not current: {detail}";
@@ -821,6 +851,7 @@ public sealed class RecompInstallService : IRecompInstallService
         products.ProtocolValid
         && products.Base.ProtocolValid
         && products.RetroRewind.ProtocolValid
+        && products.CtgpClassic.ProtocolValid
         && VersionsMatch(products.SetupVersion, state.SetupVersion)
         && PathsMatch(products.InstallDir, environment.InstallFolderPath);
 

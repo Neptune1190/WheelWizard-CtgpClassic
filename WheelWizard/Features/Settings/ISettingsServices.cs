@@ -64,6 +64,7 @@ public interface ISettingsProperties
     Setting RECOMP_SHOW_FPS { get; }
     Setting RECOMP_PREVENT_STUTTERS { get; }
     Setting RECOMP_NAND_ROOT { get; }
+    Setting RECOMP_PRODUCT_PROFILE { get; }
 }
 
 public interface ISettingsManager : ISettingsProperties

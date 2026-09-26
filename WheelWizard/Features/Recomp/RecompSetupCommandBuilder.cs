@@ -34,13 +34,23 @@ public static class RecompSetupCommandBuilder
         if (request.Portable)
             arguments.Add("--portable");
 
+        if (request.ProductProfile != RecompProductProfile.RetroRewind)
+        {
+            arguments.Add("--profile");
+            arguments.Add(ProfileArgument(request.ProductProfile));
+        }
         arguments.Add("--progress-json");
 
-        if (!string.IsNullOrWhiteSpace(request.RetroRewindFolderPath))
+        if (request.ProductProfile == RecompProductProfile.RetroRewind && !string.IsNullOrWhiteSpace(request.RetroRewindFolderPath))
         {
             arguments.Add("--retro-dir");
             arguments.Add(request.RetroRewindFolderPath);
             arguments.Add(RetroWfcPayloadArgument(request.RetroWfcPayloadMode));
+        }
+        else if (request.ProductProfile == RecompProductProfile.CtgpClassic && !string.IsNullOrWhiteSpace(request.CtgpClassicFolderPath))
+        {
+            arguments.Add("--ctgp-dir");
+            arguments.Add(request.CtgpClassicFolderPath);
         }
 
         return arguments;
@@ -53,26 +63,56 @@ public static class RecompSetupCommandBuilder
     /// </summary>
     public static IReadOnlyList<string> BuildRepairProductsArguments(
         string installFolderPath,
-        string retroRewindFolderPath,
+        RecompProductProfile profile,
+        string sourceFolderPath,
         RecompRetroWfcPayloadMode retroWfcPayloadMode = RecompRetroWfcPayloadMode.Download
     )
     {
         if (string.IsNullOrWhiteSpace(installFolderPath))
             throw new ArgumentException("An install directory is required.", nameof(installFolderPath));
-        if (string.IsNullOrWhiteSpace(retroRewindFolderPath))
-            throw new ArgumentException("A Retro Rewind source directory is required.", nameof(retroRewindFolderPath));
+        if (profile == RecompProductProfile.Base)
+            return ["--repair-products", "--profile", "base", "--install-dir", installFolderPath, "--progress-json"];
+        if (string.IsNullOrWhiteSpace(sourceFolderPath))
+            throw new ArgumentException("A product source directory is required.", nameof(sourceFolderPath));
 
-        return
-        [
-            "--repair-products",
-            "--install-dir",
-            installFolderPath,
-            "--retro-dir",
-            retroRewindFolderPath,
-            RetroWfcPayloadArgument(retroWfcPayloadMode),
-            "--progress-json",
-        ];
+        var arguments = new List<string> { "--repair-products" };
+        if (profile != RecompProductProfile.RetroRewind)
+        {
+            arguments.Add("--profile");
+            arguments.Add(ProfileArgument(profile));
+        }
+
+        arguments.Add("--install-dir");
+        arguments.Add(installFolderPath);
+
+        if (profile == RecompProductProfile.CtgpClassic)
+        {
+            arguments.Add("--ctgp-dir");
+            arguments.Add(sourceFolderPath);
+        }
+        else
+        {
+            arguments.Add("--retro-dir");
+            arguments.Add(sourceFolderPath);
+            arguments.Add(RetroWfcPayloadArgument(retroWfcPayloadMode));
+        }
+
+        arguments.Add("--progress-json");
+        return arguments;
     }
+
+    public static IReadOnlyList<string> BuildRepairProductsArguments(
+        string installFolderPath,
+        string retroRewindFolderPath,
+        RecompRetroWfcPayloadMode retroWfcPayloadMode = RecompRetroWfcPayloadMode.Download
+    ) => BuildRepairProductsArguments(installFolderPath, RecompProductProfile.RetroRewind, retroRewindFolderPath, retroWfcPayloadMode);
+
+    public static string BuildRepairProductsArgumentsString(
+        string installFolderPath,
+        RecompProductProfile profile,
+        string sourceFolderPath,
+        RecompRetroWfcPayloadMode retroWfcPayloadMode = RecompRetroWfcPayloadMode.Download
+    ) => JoinForStringRepresentation(BuildRepairProductsArguments(installFolderPath, profile, sourceFolderPath, retroWfcPayloadMode));
 
     /// <summary>
     /// Builds the arguments used to start the game. WheelWizard is the Retro Rewind frontend, so it starts
@@ -80,33 +120,93 @@ public static class RecompSetupCommandBuilder
     /// </summary>
     public static IReadOnlyList<string> BuildLaunchArguments(bool retroRewind) => [retroRewind ? "--launch-retro" : "--launch-base"];
 
+    public static IReadOnlyList<string> BuildLaunchArguments(RecompProductProfile profile) =>
+        ["--launch", "--profile", ProfileArgument(profile)];
+
     /// <summary>
     /// Builds the arguments that report, without building anything, whether the installed executables are
     /// still the output of the installed toolkit and the installed <c>Code.pul</c>.
     /// </summary>
-    public static IReadOnlyList<string> BuildCheckProductsArguments(string installFolderPath, string? retroRewindFolderPath = null)
+    public static IReadOnlyList<string> BuildCheckProductsArgumentList(
+        string installFolderPath,
+        RecompProductProfile profile = RecompProductProfile.RetroRewind,
+        string? sourceFolderPath = null
+    )
     {
         if (string.IsNullOrWhiteSpace(installFolderPath))
             throw new ArgumentException("An install directory is required.", nameof(installFolderPath));
 
-        var arguments = new List<string> { "--check-products", "--install-dir", installFolderPath };
-        if (!string.IsNullOrWhiteSpace(retroRewindFolderPath))
+        var arguments = new List<string> { "--check-products" };
+        if (profile != RecompProductProfile.RetroRewind)
         {
-            arguments.Add("--retro-dir");
-            arguments.Add(retroRewindFolderPath);
+            arguments.Add("--profile");
+            arguments.Add(ProfileArgument(profile));
+        }
+
+        arguments.Add("--install-dir");
+        arguments.Add(installFolderPath);
+
+        if (profile != RecompProductProfile.Base && !string.IsNullOrWhiteSpace(sourceFolderPath))
+        {
+            arguments.Add(profile == RecompProductProfile.CtgpClassic ? "--ctgp-dir" : "--retro-dir");
+            arguments.Add(sourceFolderPath);
         }
 
         arguments.Add("--progress-json");
         return arguments;
     }
 
+    public static string BuildCheckProductsArguments(string installFolderPath, RecompProductProfile profile, string? sourceFolderPath) =>
+        JoinForStringRepresentation(BuildCheckProductsArgumentList(installFolderPath, profile, sourceFolderPath));
+
+    public static string BuildCheckProductsArguments(string installFolderPath, string? retroRewindFolderPath) =>
+        JoinForStringRepresentation(
+            BuildCheckProductsArgumentList(installFolderPath, RecompProductProfile.RetroRewind, retroRewindFolderPath)
+        );
+
     /// <summary>
     /// Builds the arguments that make the setup executable print its own semantic version.
     /// </summary>
     public static IReadOnlyList<string> BuildVersionArguments() => ["--version"];
 
+    private static string JoinForStringRepresentation(IEnumerable<string> arguments)
+    {
+        var args = arguments.ToList();
+        var result = new List<string>(args.Count);
+        for (var i = 0; i < args.Count; i++)
+        {
+            var arg = args[i];
+            if (arg.StartsWith('-'))
+            {
+                result.Add(arg);
+                continue;
+            }
+
+            var previous = i > 0 ? args[i - 1] : null;
+            if (previous is "--profile" || previous is "--retro-dir" || previous is "--ctgp-dir" || previous is "--install-dir")
+            {
+                result.Add(previous is "--install-dir" ? Quote(arg) : arg);
+                continue;
+            }
+
+            result.Add(Quote(arg));
+        }
+
+        return string.Join(' ', result);
+    }
+
     // The contract requires exactly one payload option whenever --retro-dir is passed. WheelWizard
     // downloads unless the payload service is unreachable and the user chose an offline-only build.
+    private static string ProfileArgument(RecompProductProfile profile) =>
+        profile switch
+        {
+            RecompProductProfile.Base => "base",
+            RecompProductProfile.CtgpClassic => "ctgpclassic",
+            _ => "retro-rewind",
+        };
+
+    private static string Quote(string value) => $"\"{value}\"";
+
     private static string RetroWfcPayloadArgument(RecompRetroWfcPayloadMode mode) =>
         mode == RecompRetroWfcPayloadMode.Skip ? "--skip-retro-wfc-payload" : "--download-retro-wfc-payload";
 }

@@ -66,6 +66,7 @@ public class SettingsManager : ISettingsManager, IDisposable
         RECOMP_USE_DOLPHIN_DATA = RegisterWhWz("RecompUseDolphinData", false);
         // Whether private mode was initialized from the Wheel Wizard-owned Dolphin clone.
         RECOMP_COPY_DOLPHIN_NAND = RegisterWhWz("RecompCopyDolphinNand", false);
+        RECOMP_PRODUCT_PROFILE = RegisterWhWz("RecompProductProfile", "retro-rewind");
         DOLPHIN_LOCATION = RegisterWhWz(
             "DolphinLocation",
             // Use the wrapper for the Flatpak as the default value as a hint for curious users
@@ -340,6 +341,7 @@ public class SettingsManager : ISettingsManager, IDisposable
     public Setting RECOMP_SHOW_FPS { get; }
     public Setting RECOMP_PREVENT_STUTTERS { get; }
     public Setting RECOMP_NAND_ROOT { get; }
+    public Setting RECOMP_PRODUCT_PROFILE { get; }
     #endregion
 
     #region Public API

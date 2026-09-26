@@ -63,13 +63,20 @@ public static class RecompSetupOutputParser
         var rebuildRequiredValid = TryGetRequiredBoolean(root, "rebuildRequired", out var rebuildRequired);
         var @base = ParseProductStatus(root, "base");
         var retroRewind = ParseProductStatus(root, "retroRewind");
+        var ctgpClassic = ParseProductStatus(root, "ctgpClassic");
         return new(
             setupVersion,
             installDir,
             rebuildRequired,
             @base,
             retroRewind,
-            setupVersionValid && installDirValid && rebuildRequiredValid && @base.ProtocolValid && retroRewind.ProtocolValid
+            ctgpClassic,
+            setupVersionValid
+                && installDirValid
+                && rebuildRequiredValid
+                && @base.ProtocolValid
+                && retroRewind.ProtocolValid
+                && ctgpClassic.ProtocolValid
         );
     }
 

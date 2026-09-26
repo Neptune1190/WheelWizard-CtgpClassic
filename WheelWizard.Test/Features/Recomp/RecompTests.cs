@@ -88,6 +88,15 @@ public class RecompTests
     }
 
     [Fact]
+    public void CheckProducts_BaseProfileDoesNotPassARetroSourceDirectory()
+    {
+        var arguments = RecompSetupCommandBuilder.BuildCheckProductsArguments(@"D:\Recomp", RecompProductProfile.Base, @"D:\RetroRewind6");
+
+        Assert.Equal("--check-products --profile base --install-dir \"D:\\Recomp\" --progress-json", arguments);
+        Assert.DoesNotContain("--retro-dir", arguments);
+    }
+
+    [Fact]
     public void InstallState_ReadsThePayloadModeTheSetupHostWrites()
     {
         var state = System.Text.Json.JsonSerializer.Deserialize<RecompInstallState>(

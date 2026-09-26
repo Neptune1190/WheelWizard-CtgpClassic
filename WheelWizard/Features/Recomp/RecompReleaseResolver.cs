@@ -13,12 +13,12 @@ public static class RecompReleaseResolver
     /// <summary>
     /// The owner of the recomp staging repository.
     /// </summary>
-    public const string RepositoryOwner = "patchzyy";
+    public const string RepositoryOwner = "Neptune1190";
 
     /// <summary>
     /// The name of the recomp staging repository.
     /// </summary>
-    public const string RepositoryName = "Wiicompiled";
+    public const string RepositoryName = "Wiicompiled-CTGP-Classic";
 
     /// <summary>
     /// Returns the newest usable release, or <see langword="null"/> when the listing contains none.
@@ -42,7 +42,9 @@ public static class RecompReleaseResolver
             if (!RecompVersion.TryParse(release.TagName, out var version))
                 continue;
 
-            var asset = release.Assets.FirstOrDefault(candidate => string.Equals(candidate.Name, assetName, StringComparison.OrdinalIgnoreCase));
+            var asset = release.Assets.FirstOrDefault(candidate =>
+                string.Equals(candidate.Name, assetName, StringComparison.OrdinalIgnoreCase)
+            );
             if (asset is null || string.IsNullOrWhiteSpace(asset.BrowserDownloadUrl))
                 continue;
 

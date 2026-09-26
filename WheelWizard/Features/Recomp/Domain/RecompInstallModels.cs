@@ -7,6 +7,13 @@ namespace WheelWizard.Recomp.Domain;
 /// </summary>
 public sealed record RecompInstallProgress(string Message, int Percent);
 
+public enum RecompProductProfile
+{
+    Base,
+    RetroRewind,
+    CtgpClassic,
+}
+
 /// <summary>
 /// A GitHub release of the recomp that actually carries the setup executable.
 /// </summary>
@@ -27,6 +34,7 @@ public class RecompInstallState
 
     /// <summary>Whether the setup host has produced the Retro Rewind product, as opposed to only the base game.</summary>
     public bool RetroRewindInstalled { get; set; }
+    public bool CtgpClassicInstalled { get; set; }
 
     /// <summary>
     /// How the installed Retro Rewind product was built: <c>downloaded</c> when it embeds a Retro-WFC
@@ -67,6 +75,8 @@ public sealed record RecompInstallRequest
 
     /// <summary>The already-extracted Retro Rewind folder, or <see langword="null"/> to let the recomp decide.</summary>
     public string? RetroRewindFolderPath { get; init; }
+    public string? CtgpClassicFolderPath { get; init; }
+    public RecompProductProfile ProductProfile { get; init; } = RecompProductProfile.RetroRewind;
 
     /// <summary>
     /// Whether <see cref="InstallFolderPath"/> is the portable location, i.e. <c>&lt;root&gt;\Install</c>

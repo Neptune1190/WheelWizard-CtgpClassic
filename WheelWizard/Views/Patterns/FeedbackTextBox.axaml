@@ -12,7 +12,7 @@
         <components:FormFieldLabel Text="{Binding Label}" TipText="{Binding TipText}"
                                    IsVisible="{Binding Label, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         <TextBox x:Name="InputField" Text="{Binding Text}"
-                 PlaceholderText="{Binding Watermark}"/>
+                 Watermark="{Binding Watermark}"/>
         <components:IconLabel IsIconLeft="True" Text="{Binding ErrorMessage}"
                               IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                               Foreground="{StaticResource Danger600}"
