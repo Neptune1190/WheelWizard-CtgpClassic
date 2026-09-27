@@ -1,6 +1,7 @@
 name: Release Wheel Wizard
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*"
